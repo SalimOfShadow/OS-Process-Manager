@@ -29,6 +29,30 @@ public class ProcessUtil {
         }
     }
 
+    public static void findProcess(String processName) {
+        String command = "tasklist /fi \"imagename eq " + processName + "\"";
+        try {
+            Process process = Runtime.getRuntime().exec(command);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+
+            boolean found = false;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains(processName)) {
+                    System.out.println("Found process: " + line.split(" ")[0]);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                System.out.println("Process not found: " + processName);
+            }
+
+        } catch (IOException e) {
+            System.out.println("Failed to find the selected process: " + e.getMessage());
+        }
+    }
+
     public static void killProcess(String processName) {
         String command = "taskkill /IM " + processName + " /F";
         String psCommand = "powershell.exe Start-Process cmd -ArgumentList '/c taskkill /IM " + processName + " /F' -Verb RunAs";
@@ -56,3 +80,6 @@ public class ProcessUtil {
         }
     }
 }
+
+
+
