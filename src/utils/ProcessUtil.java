@@ -4,7 +4,6 @@ import shell_commands.ShellCommands;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 public class ProcessUtil {
     public static String currentOs = System.getProperty("os.name");
@@ -76,28 +75,25 @@ public class ProcessUtil {
         }
     }
 
-    public static void killProcess(String processName) {
-        String command = "taskkill /IM " + processName + " /F";
-        String psCommand = "powershell.exe Start-Process cmd -ArgumentList '/c taskkill /IM " + processName + " /F' -Verb RunAs";
+    public static void killProcessById(int processId) {
+        if (processId == -1) return;
         try {
-            Process process = Runtime.getRuntime().exec(command);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader reader = ShellCommands.killProcess(currentOs, processId);
+            assert reader != null;
             String line = reader.readLine();
-
             if (line != null && line.contains("SUCCESS: The process ")) {
                 System.out.println("Successfully terminated the process");
             } else {
                 System.out.println("Normal termination failed. Attempting to elevate process...");
-                Process psProcess = Runtime.getRuntime().exec(psCommand);
-                BufferedReader psReader = new BufferedReader(new InputStreamReader(psProcess.getInputStream()));
-                String psLine;
-
-                while ((psLine = psReader.readLine()) != null) {
-                    System.out.println(psLine);
+                BufferedReader adminReader = ShellCommands.killProcessAsAdmin(currentOs, processId);
+                String adminLine;
+                while (true) {
+                    assert adminReader != null;
+                    if ((adminLine = adminReader.readLine()) == null) break;
+                    System.out.println(adminLine);
                 }
                 System.out.println("Successfully terminated the process with elevated privileges.");
             }
-
         } catch (IOException e) {
             System.out.println("Failed to close the given process. Please make sure the program is running.");
         }
