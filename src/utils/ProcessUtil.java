@@ -1,28 +1,30 @@
 package utils;
 
+import shell_commands.Shell;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class ProcessUtil {
+    public static String currentOs = System.getProperty("os.name");
 
     public static void listRunningProcesses() {
         try {
-            String command = "tasklist"; // For Linux/Mac, use "ps -e"
-            Process process = Runtime.getRuntime().exec(command);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader reader = Shell.listProcesses(currentOs);
             String line;
             boolean firstLine = true;
-
-            while ((line = reader.readLine()) != null) {
+            while (true) {
+                assert reader != null;
+                if ((line = reader.readLine()) == null) break;
                 if (firstLine) {
                     firstLine = false;
                     continue;
                 }
-
                 String[] processInfo = line.split("\\s+");
                 if (processInfo.length > 0) {
-                    System.out.println(processInfo[0]);
+                    String processName = (currentOs.equals("Linux") || currentOs.equals("Mac")) ? processInfo[4] : processInfo[0];
+                    System.out.println(processName);
                 }
             }
         } catch (IOException e) {
