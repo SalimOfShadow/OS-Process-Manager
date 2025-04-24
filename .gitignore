@@ -30,4 +30,4 @@ bin/
 
 
 ### Java ###
-.class
+*.class
