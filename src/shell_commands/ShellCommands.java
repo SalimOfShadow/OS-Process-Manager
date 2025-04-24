@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-public class Shell {
+public class ShellCommands {
     public static BufferedReader listProcesses(String os) {
         try {
             String command = (os.equals("Linux") || os.equals("Mac")) ? "ps -e" : "tasklist";
@@ -16,5 +16,18 @@ public class Shell {
         }
         return null;
     }
+
+    public static BufferedReader findProcess(String os,String processName) {
+        try {
+            String command = (os.equals("Linux") || os.equals("Mac")) ? "pgrep " + processName : "tasklist /fi \"imagename eq " + processName + "\"";
+            Process process = Runtime.getRuntime().exec(command);
+            System.out.println(command);
+            return new BufferedReader(new InputStreamReader(process.getInputStream()));
+        } catch (IOException e) {
+            System.out.println("Failed to find the selected process: " + e.getMessage());
+        }
+        return null;
+    }
+
 }
 

@@ -1,6 +1,6 @@
 package utils;
 
-import shell_commands.Shell;
+import shell_commands.ShellCommands;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,7 +11,7 @@ public class ProcessUtil {
 
     public static void listRunningProcesses() {
         try {
-            BufferedReader reader = Shell.listProcesses(currentOs);
+            BufferedReader reader = ShellCommands.listProcesses(currentOs);
             String line;
             boolean firstLine = true;
             while (true) {
@@ -32,27 +32,47 @@ public class ProcessUtil {
         }
     }
 
-    public static void findProcess(String processName) {
-        String command = "tasklist /fi \"imagename eq " + processName + "\"";
+    public static int findProcessIdByName(String processName) {
         try {
-            Process process = Runtime.getRuntime().exec(command);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader reader = ShellCommands.findProcess(currentOs, processName);
             String line;
+            boolean headerSkipped = false;
 
-            boolean found = false;
-            while ((line = reader.readLine()) != null) {
-                if (line.contains(processName)) {
-                    System.out.println("Found process: " + line.split(" ")[0]);
-                    found = true;
-                    break;
+            while (true) {
+                assert reader != null;
+                if ((line = reader.readLine()) == null) break;
+                line = line.trim();
+                if (line.isEmpty()) continue;
+                // Parse Windows response table
+                if (currentOs.toLowerCase().contains("windows")) {
+                    if (!headerSkipped) {
+                        if (line.startsWith("=")) {
+                            headerSkipped = true;
+                        }
+                        continue;
+                    }
+
+                    if (line.toLowerCase().startsWith(processName.toLowerCase())) {
+                        String[] parts = line.split("\\s+");
+                        if (parts.length >= 2) {
+                            System.out.println("Found process: " + parts[1]);
+                            return Integer.parseInt(parts[1]);
+                        }
+                    }
+
+                } else {
+                    // For Linux/macOS: pgrep output is just the PID
+                    if (line.matches("\\d+")) {
+                        System.out.println("Found process: " + line);
+                        return Integer.parseInt(line);
+                    }
                 }
             }
-            if (!found) {
-                System.out.println("Process not found: " + processName);
-            }
-
+            System.out.println("Process not found: " + processName);
+            return -1;
         } catch (IOException e) {
             System.out.println("Failed to find the selected process: " + e.getMessage());
+            return -1;
         }
     }
 
